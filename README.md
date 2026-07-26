@@ -34,11 +34,12 @@ correct journey:
 - Access still required: the CLI opens the existing Althea access-request page.
   Complete that journey, then rerun the same setup command.
 
-After verification, setup creates a dedicated API key and stores it at
+After verification, setup creates a dedicated, 90-day MCP API key and stores it at
 `~/.config/althea-mcp/credentials.json` with user-only file permissions where
-the operating system supports them. It
+the operating system supports them. The key is scoped to the Althea MCP
+frontend channel; it is not a general-purpose Althea or ACTX credential. Setup
 also schedules the same idempotent dossier setup used after web sign-in. It
-does not persist the short-lived login token or print the API key. Optional
+does not persist the interactive login token or print the API key. Optional
 onboarding details can still be completed in the Althea web app.
 
 Once the package is on PyPI, the setup command becomes:
@@ -159,13 +160,21 @@ routes:
 | Unified sign-in/sign-up detection | `POST /otp/signin` |
 | CLI OTP verification | `POST /mcp/auth/otp/signin/verify` |
 | Idempotent profile/dossier setup | `POST /create_dossier` |
-| Create and manage main-account keys | `/mcp/api-keys` |
+| Create and manage MCP-scoped keys | `/mcp/api-keys` |
 | Send to the user's Althea | `POST /mcp/threads/{thread_key}/messages` |
 | Read the MCP conversation | `GET /mcp/threads/{thread_key}/messages` |
 
-The frontend authenticates the API key, maps it to the main user, provisions
-or resolves that user's canonical Althea, and owns the MCP `ChannelSession`.
-The MCP package does not know about ACTX internals.
+The stored key goes only to the frontend MCP routes. The frontend authenticates
+it through a service-only auth-server exchange and receives a two-hour
+delegated user token. That delegated token—not the MCP key—is sent to ACTX.
+The duration covers queued wakes and code-assistant work. The frontend uses
+the token to resolve the main user, provision or find that user's canonical
+Althea, and own the MCP `ChannelSession`.
+
+Creating, listing, or revoking MCP keys requires an interactive login token;
+an MCP key cannot mint or manage keys. Revoking the key deactivates the usage
+session behind both the key and any delegated token. The MCP package does not
+know about ACTX internals.
 
 ## Local development
 

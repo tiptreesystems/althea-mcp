@@ -101,11 +101,11 @@ class AltheaClient:
         )
         return self._validate(APIResponse, response_payload, "/create_dossier")
 
-    async def list_api_keys(self) -> list[ApiSession]:
+    async def list_api_keys(self, *, access_token: str) -> list[ApiSession]:
         response_payload = await self._request_json(
             "GET",
             "/mcp/api-keys",
-            authenticated=True,
+            authorization=access_token,
         )
         if not isinstance(response_payload, list):
             raise AltheaProtocolError(
@@ -113,12 +113,17 @@ class AltheaClient:
             )
         return [self._validate(ApiSession, item, "/mcp/api-keys") for item in response_payload]
 
-    async def revoke_api_key(self, api_session_id: str) -> APIResponse:
+    async def revoke_api_key(
+        self,
+        api_session_id: str,
+        *,
+        access_token: str,
+    ) -> APIResponse:
         path = f"/mcp/api-keys/{quote(api_session_id, safe='')}"
         response_payload = await self._request_json(
             "DELETE",
             path,
-            authenticated=True,
+            authorization=access_token,
         )
         return self._validate(APIResponse, response_payload, path)
 
