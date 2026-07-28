@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 import webbrowser
 from collections.abc import Callable
 from contextlib import suppress
@@ -61,17 +62,26 @@ async def run_setup(
             token=token,
             otp=otp,
         )
+        if not token_response.refresh_token:
+            raise AltheaProtocolError("Althea did not issue a refresh token. Please rerun setup.")
+        issued_at = time.time()
+        credentials = StoredCredentials(
+            app_url=config.app_url,
+            access_token=token_response.access_token,
+            refresh_token=token_response.refresh_token,
+            access_token_expires_at=issued_at + token_response.expires_in,
+            refresh_token_expires_at=(
+                issued_at + token_response.refresh_expires_in
+                if token_response.refresh_expires_in is not None
+                else None
+            ),
+        )
+        save_credentials(config.credentials_path, credentials)
         await _schedule_dossier(
             althea_client,
             access_token=token_response.access_token,
             output_fn=output_fn,
         )
-        api_key = await althea_client.create_api_key(access_token=token_response.access_token)
-        credentials = StoredCredentials(
-            app_url=config.app_url,
-            api_key=api_key.api_key,
-        )
-        save_credentials(config.credentials_path, credentials)
     except AltheaAPIError as exc:
         if exc.status_code == 403 and exc.error_code in ACCESS_ERROR_CODES:
             return _open_access_request(

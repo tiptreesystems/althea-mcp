@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     setup_parser = subparsers.add_parser(
         "setup",
-        help="Sign in or sign up, then save an API key for this machine.",
+        help="Sign in or sign up, then save a refreshable session for this machine.",
     )
     setup_parser.add_argument(
         "--app-url",
@@ -51,7 +51,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     arguments = parser.parse_args(argv)
     try:
         if arguments.command == "setup":
-            config = runtime_config_from_env()
+            config = runtime_config_from_env(validate_saved_credentials=False)
             credentials_path = (
                 arguments.credentials_file.expanduser()
                 if arguments.credentials_file is not None

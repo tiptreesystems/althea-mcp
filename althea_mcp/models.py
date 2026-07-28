@@ -21,27 +21,8 @@ class TokenResponse(BaseModel):
     token_type: str = "Bearer"  # noqa: S105 - OAuth token type, not a credential
     expires_in: float
     refresh_token: str | None = None
+    refresh_expires_in: float | None = None
     scope: str | None = None
-
-
-class ApiKey(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    id: str
-    api_key: str
-    created_at: float
-    expires_at: float
-    revoked_at: float | None = None
-
-
-class ApiSession(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    id: str
-    created_at: float
-    expires_at: float
-    revoked_at: float | None = None
-    info: dict[str, Any] | None = None
 
 
 class MessagePayload(BaseModel):
@@ -67,6 +48,9 @@ class Message(BaseModel):
 class StoredCredentials(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    version: Literal[1] = 1
+    version: Literal[2] = 2
     app_url: str
-    api_key: str = Field(min_length=1)
+    access_token: str = Field(min_length=1)
+    refresh_token: str = Field(min_length=1)
+    access_token_expires_at: float
+    refresh_token_expires_at: float | None = None

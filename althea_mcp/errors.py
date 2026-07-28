@@ -11,6 +11,10 @@ class AltheaConfigurationError(AltheaError):
     """Raised when local Althea MCP configuration is missing or invalid."""
 
 
+class AltheaAuthenticationError(AltheaError):
+    """Raised when the saved MCP usage session must be authenticated again."""
+
+
 class AltheaConnectionError(AltheaError):
     """Raised when the Althea frontend cannot be reached."""
 
