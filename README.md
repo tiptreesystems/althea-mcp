@@ -1,78 +1,106 @@
+<!-- mcp-name: io.github.tiptreesystems/althea-mcp -->
+
 <p align="center">
+  <img src="https://raw.githubusercontent.com/tiptreesystems/althea-mcp/main/assets/banner.svg" alt="Althea MCP. Your personal Althea in local MCP clients." width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml"><img src="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&amp;logoColor=white" alt="Python 3.11+" /></a>
-  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-server-7C3AED" alt="MCP server" /></a>
-  <a href="https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT license" /></a>
+  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-local%20server-638B8D" alt="Local MCP server" /></a>
+  <a href="https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6D70.svg" alt="MIT license" /></a>
 </p>
 
 # Althea MCP
 
-Bring your personal [Althea](https://althea.tiptreesystems.com) into Codex,
-Claude, and other MCP-compatible tools.
+Give Codex, Claude Code, Claude Desktop, and other local MCP clients a direct
+line to your personal [Althea](https://althea.tiptreesystems.com).
 
-Althea MCP talks to the main Althea application. It uses your existing account
-and canonical Althea—with the same dossier and long-term memory you use through
-the web, email, SMS, and other channels. It creates a dedicated MCP conversation
-thread, just as each other channel has its own thread.
+- **One Althea across every channel.** MCP uses your existing account, profile,
+  and long-term memory.
+- **Client-specific conversations.** Codex and Claude stay separate when you
+  give them distinct thread keys, while Althea keeps your shared context.
+- **Fast or asynchronous.** Wait for a reply, leave a message for longer work,
+  or read the thread later.
+- **Private sign-in.** Authenticate with an emailed code. Your MCP configuration
+  contains no API key or pasted token.
 
-It does **not** use the retired Platform API, create an account in a parallel
-auth database, or spin up a separate blank agent.
+> [!IMPORTANT]
+> Althea MCP is currently a pre-release. The source is public for review, but
+> the production MCP routes are not live yet. Production access will be
+> announced with the first tagged release.
+
+[Setup](#setup) · [Connect a client](#connect-an-mcp-client) ·
+[First conversation](#start-a-conversation) · [Tools](#tools) ·
+[Security and privacy](#security-and-privacy) ·
+[Development](#local-development)
 
 ## Setup
 
-Run one command:
+You need access to Althea and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+Until the first PyPI release, install the package directly from GitHub:
 
 ```bash
-uvx --from git+https://github.com/tiptreesystems/althea-mcp.git althea-mcp setup
+uv tool install git+https://github.com/tiptreesystems/althea-mcp.git
+althea-mcp setup
 ```
 
-The command asks for your email and lets the Althea frontend determine the
-correct journey:
+If the install succeeds but the command is not found, run `uv tool update-shell`
+and open a new terminal.
 
-- Existing account: Althea emails a verification code.
-- Eligible new account: the CLI asks for your name, creates the account, and
-  emails a verification code.
-- Access still required: the CLI opens the existing Althea access-request page.
-  Complete that journey, then rerun the same setup command.
+Run setup yourself in an interactive terminal. Enter your email and verification
+code there, not in an AI chat.
 
-After verification, setup creates an ordinary platform usage session: the
-access session lasts 7 days and its rotating refresh-token family has a 14-day
-absolute lifetime. The access and refresh tokens are stored at
-`~/.config/althea-mcp/credentials.json` with user-only file permissions where
-the operating system supports them. Access tokens are refreshed automatically
-before they expire; refresh rotation is locked across local MCP processes so
-Codex, Claude, and other clients can safely share the credential file. Setup
-also schedules the same idempotent dossier setup used after web sign-in.
-Optional onboarding details can still be completed in the Althea web app.
+```text
+Connect your personal Althea
+-----------------------------
+Email: you@example.com
+A verification code was sent to you@example.com.
+Verification code:
 
-When the 14-day refresh-token family expires or is revoked, a tool call reports
-that authentication is required. Rerun `althea-mcp setup` in a separate
-terminal, enter the emailed verification code, and retry the call. Running MCP
-processes reload the replaced credentials automatically. Credentials from the
-earlier API-key format require this one-time setup again; a stale
-`ALTHEA_API_KEY` setting is ignored once the new session file exists.
+Althea MCP is ready.
+Credentials saved to ~/.config/althea-mcp/credentials.json
+```
 
-Once the package is on PyPI, the setup command becomes:
+Setup follows the same account journey as the Althea web app:
+
+- Existing accounts receive a verification code by email.
+- Eligible new accounts are asked for a name, then receive a verification code.
+- Accounts that still need access are sent to the
+  [Althea application](https://tiptreesystems.com/apply). Complete it, then run
+  setup again.
+
+The installed server starts without fetching code on every launch. Its tools
+still need a network connection to Althea. Upgrade the package later with:
 
 ```bash
-uvx althea-mcp setup
+uv tool upgrade althea-mcp
 ```
 
 ## Connect an MCP client
 
-Run setup once before adding the server.
+Complete setup once, then add the local stdio server. Give each client a
+different thread key.
+
+> [!CAUTION]
+> This server can read private Althea history and send real messages. Register
+> it only in clients and projects you trust.
 
 ### Codex
 
 ```bash
-codex mcp add althea -- uvx --from git+https://github.com/tiptreesystems/althea-mcp.git althea-mcp
+codex mcp add althea \
+  --env ALTHEA_THREAD_KEY=codex \
+  -- althea-mcp
+codex mcp list
 ```
 
-Or add this to `~/.codex/config.toml`:
+`codex mcp add` writes to your user configuration. Equivalent
+`~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.althea]
-command = "uvx"
-args = ["--from", "git+https://github.com/tiptreesystems/althea-mcp.git", "althea-mcp"]
+command = "althea-mcp"
 
 [mcp_servers.althea.env]
 ALTHEA_THREAD_KEY = "codex"
@@ -81,22 +109,25 @@ ALTHEA_THREAD_KEY = "codex"
 ### Claude Code
 
 ```bash
-claude mcp add --scope user althea -- uvx --from git+https://github.com/tiptreesystems/althea-mcp.git althea-mcp
+claude mcp add althea \
+  -e ALTHEA_THREAD_KEY=claude-code \
+  -- althea-mcp
+claude mcp list
 ```
 
-Or add this under the top-level `mcpServers` object in `~/.claude.json`:
+That command uses Claude Code's project-local scope. Add `--scope user`
+immediately before `althea` only if you want the server available in every
+project you open.
+
+A user-wide manual entry under the top-level `mcpServers` object in
+`~/.claude.json` looks like this:
 
 ```json
 {
   "mcpServers": {
     "althea": {
       "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/tiptreesystems/althea-mcp.git",
-        "althea-mcp"
-      ],
+      "command": "althea-mcp",
       "env": {
         "ALTHEA_THREAD_KEY": "claude-code"
       }
@@ -105,101 +136,209 @@ Or add this under the top-level `mcpServers` object in `~/.claude.json`:
 }
 ```
 
-### Claude Desktop and other local MCP clients
+### Claude Desktop and other local clients
 
-Use the same stdio command:
+Find the installed command:
+
+```bash
+command -v althea-mcp
+```
+
+On Windows PowerShell:
+
+```powershell
+(Get-Command althea-mcp).Source
+```
+
+GUI applications sometimes receive a smaller `PATH` than your terminal. If
+`althea-mcp` is not found, use the absolute path returned above:
 
 ```json
 {
   "mcpServers": {
     "althea": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/tiptreesystems/althea-mcp.git",
-        "althea-mcp"
-      ]
+      "command": "/absolute/path/to/althea-mcp",
+      "env": {
+        "ALTHEA_THREAD_KEY": "claude-desktop"
+      }
     }
   }
 }
 ```
 
-Use a distinct `ALTHEA_THREAD_KEY` for each MCP client if you run several
-clients concurrently.
+Restart the client after changing its MCP configuration.
+
+## Start a conversation
+
+Try one of these prompts in your MCP client:
+
+```text
+Ask my Althea what I have been working on recently.
+```
+
+```text
+Send this context to my Althea without waiting for a reply:
+I am comparing the two approaches in the current design document.
+```
+
+```text
+Check whether my Althea has replied in the MCP thread.
+```
+
+Messages continue the configured thread. They are real messages to your
+personal Althea and may cause her to begin work.
 
 ## Tools
 
-- `ask_althea(message)`
-  Sends a real message to your Althea and waits for her response.
-- `send_message_to_althea(message)`
-  Sends a message without waiting, for asynchronous requests or context.
-- `get_althea_messages(sender=None, limit=10)`
-  Retrieves recent messages from the configured MCP thread.
+| Tool | What it does |
+| --- | --- |
+| `ask_althea(message)` | Sends a message and uses a 120-second polling window by default for the first reply. If the window expires, the work may still continue. |
+| `send_message_to_althea(message)` | Sends a message immediately and returns a receipt without waiting. Use it for context, notes, and longer requests. |
+| `get_althea_messages(sender=None, limit=10)` | Returns 1 to 100 recent messages in chronological order. Optionally filter by `user`, `assistant`, or `system`. |
+
+The two send tools are marked as state-changing. Message retrieval is read-only.
+The current tool surface is text-only. It does not expose attachments or other
+Althea artifacts.
+
+## How it works
+
+```text
+Codex / Claude / another MCP client
+                │ local stdio
+                ▼
+           Althea MCP
+                │ HTTPS
+                ▼
+          Althea frontend
+                │
+                ├── your account, profile, and long-term memory
+                └── a persisted conversation for this thread key
+```
+
+Althea MCP is a small public adapter. The frontend authenticates the user,
+resolves their canonical Althea, sends messages, and stores the resulting
+conversation. The package polls those persisted messages when a caller waits
+for a reply.
+
+## Sign-in and sessions
+
+Setup creates a normal Althea usage session:
+
+- The access session lasts 7 days.
+- Its rotating refresh-token family lasts 14 days from sign-in.
+- Access tokens refresh automatically before expiry.
+- A cross-process lock lets several local MCP clients share the credential file
+  without racing refresh-token rotation.
+- When the session expires or is revoked, run `althea-mcp setup` again in a
+  separate terminal. Running MCP processes reload the replacement credentials.
+
+Credentials are stored as plaintext JSON at
+`~/.config/althea-mcp/credentials.json`. On operating systems that support Unix
+file modes, the credential file is set to `0600`. A parent directory created by
+Althea MCP is requested as `0700`; check the permissions yourself when using a
+pre-existing custom directory.
+
+## Security and privacy
+
+- Messages sent through these tools are persisted in your Althea account, like
+  messages from Althea's other channels.
+- The local stdio process sends messages and credentials to Althea over HTTPS.
+  Even with local transport, conversation data leaves your machine.
+- The connected MCP host and model can see tool arguments and replies. They may
+  retain that data under their own privacy and retention policies.
+- The package sends access credentials only to the Althea origin they were
+  issued for. Changing `ALTHEA_APP_URL` requires a new setup.
+- The refresh token is sent only to the session rotation endpoint.
+- Email verification codes and the credential file are secrets. Never paste
+  them into an AI chat, terminal transcript, issue, or pull request.
+- To remove the local session, close MCP clients and delete the credential file.
+  This forgets the session on that machine. Contact Tiptree if a copied session
+  must also be revoked.
+
+Please report vulnerabilities using
+[the security policy](https://github.com/tiptreesystems/althea-mcp/security/policy).
 
 ## Configuration
 
-- `ALTHEA_APP_URL`
-  Defaults to `https://althea.tiptreesystems.com`. Credentials are bound to
-  this URL; rerun setup for the new URL before changing it.
-- `ALTHEA_THREAD_KEY`
-  Stable conversation-thread identifier. Defaults to `mcp`.
-- `ALTHEA_MCP_CREDENTIALS_FILE`
-  Overrides `~/.config/althea-mcp/credentials.json`.
-- `ALTHEA_MCP_HTTP_TIMEOUT`
-  HTTP timeout in seconds. Defaults to `60`.
-- `ALTHEA_MCP_POLL_INTERVAL`
-  Response polling interval in seconds. Defaults to `2`.
-- `ALTHEA_MCP_POLL_TIMEOUT`
-  Maximum time `ask_althea` waits for a response. Defaults to `120`.
-- `ALTHEA_MCP_LOG_LEVEL`
-  Defaults to `WARNING`.
+Most users only need `althea-mcp setup` and a client-specific thread key.
 
-The normal user journey is simply `althea-mcp setup`; no token needs to be
-pasted into an MCP config.
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `ALTHEA_APP_URL` | `https://althea.tiptreesystems.com` | Althea API origin. Saved credentials are bound to it. Plain HTTP is accepted only for loopback development. |
+| `ALTHEA_PUBLIC_SITE_URL` | `https://tiptreesystems.com` | Base URL for terms, privacy, and access requests. Dev Althea selects `https://dev.tiptreesystems.com` automatically. |
+| `ALTHEA_THREAD_KEY` | `mcp` | Stable conversation identifier. Use 1 to 128 letters, digits, dots, underscores, colons, or hyphens, starting with a letter or digit. |
+| `ALTHEA_MCP_CREDENTIALS_FILE` | `~/.config/althea-mcp/credentials.json` | Override the local credential path. |
+| `ALTHEA_MCP_HTTP_TIMEOUT` | `60` | HTTP timeout in seconds. |
+| `ALTHEA_MCP_POLL_INTERVAL` | `2` | Delay between response polls in seconds. |
+| `ALTHEA_MCP_POLL_TIMEOUT` | `120` | Maximum wait for `ask_althea` in seconds. |
+| `ALTHEA_MCP_LOG_LEVEL` | `WARNING` | Python log level. |
 
-## Architecture
+Setup also accepts `--credentials-file` to override the credential path and
+`--no-browser` to print an access-request URL without opening it.
 
-This repository is intentionally independent of the private
-`tiptree-clients` package. It is a thin public adapter over frontend-owned
-routes:
+## Troubleshooting
 
-| Capability | Frontend route |
-| --- | --- |
-| Unified sign-in/sign-up detection | `POST /otp/signin` |
-| CLI OTP verification | `POST /mcp/auth/otp/signin/verify` |
-| Rotate the MCP usage session | `POST /mcp/auth/token` |
-| Idempotent profile/dossier setup | `POST /create_dossier` |
-| Send to the user's Althea | `POST /mcp/threads/{thread_key}/messages` |
-| Read the MCP conversation | `GET /mcp/threads/{thread_key}/messages` |
+**`Althea MCP is not configured`**
 
-The MCP OTP route issues the same ordinary usage session used by the platform:
-a 7-day access session within a rotating 14-day refresh-token family. The MCP
-package sends the current access token to the frontend, which resolves the main
-user, provisions or finds that user's canonical Althea, and owns the MCP
-`ChannelSession`. The same access token is used for the corresponding ACTX
-work; the refresh token never leaves the local package's token-rotation route.
+Run `althea-mcp setup` in a terminal, then restart the MCP client.
+
+**`Your Althea MCP sign-in has expired or was revoked`**
+
+Run setup again. The refresh-token family has a 14-day absolute lifetime.
+
+**Saved credentials are bound to another URL**
+
+Run setup with the same origin the MCP client will use:
+
+```bash
+althea-mcp setup --app-url https://althea.example
+```
+
+Then set the matching `ALTHEA_APP_URL` in the client configuration.
+
+**`ask_althea` timed out**
+
+Althea may still be working. Call `get_althea_messages` after a short wait.
+
+**The client cannot find `althea-mcp`**
+
+Run `command -v althea-mcp` in a terminal and use that absolute path in the
+client configuration.
+
+**Two clients are sharing a conversation**
+
+Assign a distinct `ALTHEA_THREAD_KEY` to each client and restart them.
 
 ## Local development
 
 ```bash
 git clone https://github.com/tiptreesystems/althea-mcp.git
 cd althea-mcp
-uv sync --extra dev
-uv run pytest
-uv run ruff check .
+uv sync --locked --extra dev
+uv run pytest -q
+uv run ruff check althea_mcp tests
+uv run ruff format --check .
+uv build
+uvx twine check dist/*
+```
+
+Run setup against a local frontend:
+
+```bash
 uv run althea-mcp setup --app-url http://localhost:8080
 ```
 
-Running `althea-mcp` with no subcommand starts the stdio MCP server. The
-equivalent explicit command is `althea-mcp serve`.
+Running `althea-mcp` with no subcommand starts the stdio server. The explicit
+equivalent is `althea-mcp serve`.
 
-## Distribution
+## Contributing
 
-Althea MCP is a local stdio server. It can be published to PyPI and submitted
-to the official MCP Registry. Anthropic's connectors directory is for remote
-MCP servers, so this local package is not a fit for that directory unless a
-hosted transport is added later.
+Bug reports and focused pull requests are welcome. Read
+[the contribution guide](https://github.com/tiptreesystems/althea-mcp/blob/main/CONTRIBUTING.md)
+before opening one. Remove all email addresses, messages, OTPs, and credentials
+from logs and fixtures.
 
 ## License
 
-MIT. See the [license](https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE).
+[MIT](https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE) © Tiptree
+Advanced Systems Corporation.

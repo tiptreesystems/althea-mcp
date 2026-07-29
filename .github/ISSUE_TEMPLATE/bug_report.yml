@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible problem with Althea MCP
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include an email verification code, token, credential file, private message, or unsanitized log. Report security problems using the [security policy](https://github.com/tiptreesystems/althea-mcp/security/policy).
+  - type: input
+    id: version
+    attributes:
+      label: Althea MCP version
+      description: Run `althea-mcp --version`.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Python version, and MCP client.
+      placeholder: macOS 15, Python 3.12, Codex
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Give the smallest set of steps that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized_output
+    attributes:
+      label: Sanitized output
+      description: Optional. Remove all private data and credentials before pasting.
+      render: shell

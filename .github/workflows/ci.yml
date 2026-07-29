@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -25,13 +25,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --frozen --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Ruff lint
-        run: uv run ruff check althea_mcp
+        run: uv run ruff check althea_mcp tests
 
       - name: Ruff format
         run: uv run ruff format --check .
+
+      - name: Tests
+        run: uv run pytest -q
 
       - name: Build distribution
         run: |
@@ -40,5 +43,5 @@ jobs:
 
       - name: Dependency audit
         run: |
-          uv export --frozen --no-emit-project --all-extras > audit-requirements.txt
+          uv export --locked --no-emit-project --all-extras > audit-requirements.txt
           uvx pip-audit -r audit-requirements.txt --disable-pip

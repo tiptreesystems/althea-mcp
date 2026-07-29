@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 import webbrowser
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
+from getpass import getpass
 from pathlib import Path
 
 from althea_mcp.client import AltheaClient
@@ -29,6 +31,7 @@ async def run_setup(
     config: RuntimeConfig,
     *,
     input_fn: Callable[[str], str] = input,
+    secret_input_fn: Callable[[str], str] = getpass,
     output_fn: Callable[[str], None] = print,
     open_browser: Callable[[str], object] = webbrowser.open,
     client: AltheaClient | None = None,
@@ -38,7 +41,8 @@ async def run_setup(
     output_fn("Connect your personal Althea")
     output_fn("-----------------------------")
     output_fn(
-        f"By continuing, you agree to {config.app_url}/terms and {config.app_url}/privacy-policy."
+        f"By continuing, you agree to {config.public_site_url}/terms "
+        f"and {config.public_site_url}/privacy-policy."
     )
     email = _prompt_email(input_fn, output_fn)
     althea_client = client or AltheaClient(
@@ -57,7 +61,11 @@ async def run_setup(
         )
         token = _signin_token(signin_response)
         output_fn(f"A verification code was sent to {email}.")
-        otp = _prompt_required(input_fn, output_fn, "Verification code: ")
+        otp = _prompt_required(
+            secret_input_fn,
+            output_fn,
+            "Verification code: ",
+        )
         token_response = await althea_client.verify_signin_otp(
             token=token,
             otp=otp,
@@ -77,15 +85,21 @@ async def run_setup(
             ),
         )
         save_credentials(config.credentials_path, credentials)
-        await _schedule_dossier(
-            althea_client,
-            access_token=token_response.access_token,
-            output_fn=output_fn,
-        )
+        try:
+            await _schedule_profile_initialization(
+                althea_client,
+                access_token=token_response.access_token,
+                output_fn=output_fn,
+            )
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            output_fn("")
+            output_fn(f"Credentials were saved to {config.credentials_path}.")
+            output_fn("Profile initialization was interrupted.")
+            raise
     except AltheaAPIError as exc:
         if exc.status_code == 403 and exc.error_code in ACCESS_ERROR_CODES:
             return _open_access_request(
-                config.app_url,
+                config.public_site_url,
                 output_fn=output_fn,
                 open_browser=open_browser,
                 browser_enabled=browser_enabled,
@@ -97,7 +111,7 @@ async def run_setup(
 
     output_fn("")
     output_fn("Althea MCP is ready.")
-    output_fn(f"Credentials saved securely to {config.credentials_path}")
+    output_fn(f"Credentials saved to {config.credentials_path}")
     output_fn("Add the MCP server to your client, then ask it to call `ask_althea`.")
     return SetupResult(
         configured=True,
@@ -105,16 +119,20 @@ async def run_setup(
     )
 
 
-async def _schedule_dossier(
+async def _schedule_profile_initialization(
     client: AltheaClient,
     *,
     access_token: str,
     output_fn: Callable[[str], None],
 ) -> None:
     try:
-        await client.create_dossier(access_token=access_token)
+        initialize_profile = getattr(client, "initialize_profile", None)
+        if initialize_profile is not None:
+            await initialize_profile(access_token=access_token)
+        else:
+            await client.create_dossier(access_token=access_token)
     except AltheaError as exc:
-        # Dossier generation enriches the agent but is not required for the
+        # Profile generation enriches the agent but is not required for the
         # credential handoff. The frontend retries it on a later web sign-in.
         output_fn(f"Note: Althea profile enrichment was not scheduled: {exc}")
 
@@ -174,13 +192,13 @@ def _prompt_required(
 
 
 def _open_access_request(
-    app_url: str,
+    public_site_url: str,
     *,
     output_fn: Callable[[str], None],
     open_browser: Callable[[str], object],
     browser_enabled: bool,
 ) -> SetupResult:
-    access_url = f"{app_url}/apply"
+    access_url = f"{public_site_url}/apply"
     output_fn("")
     output_fn("This email does not have an active Althea account yet.")
     output_fn(f"Request access at: {access_url}")

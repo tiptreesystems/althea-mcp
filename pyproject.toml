@@ -25,19 +25,24 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
     "filelock>=3.13,<4",
-    "httpx>=0.27.0",
+    "httpx>=0.27.0,<1",
     "mcp>=1.28.1,<2",
     "pydantic>=2.7,<3",
 ]
 
 [project.urls]
 Homepage = "https://althea.tiptreesystems.com"
+Documentation = "https://github.com/tiptreesystems/althea-mcp#readme"
 Repository = "https://github.com/tiptreesystems/althea-mcp"
+Issues = "https://github.com/tiptreesystems/althea-mcp/issues"
+Security = "https://github.com/tiptreesystems/althea-mcp/security/policy"
 
 [project.scripts]
 althea-mcp = "althea_mcp.cli:main"
@@ -74,4 +79,4 @@ target-version = "py311"
 select = ["B", "E4", "E7", "E9", "F", "I", "S", "SIM", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S106"]
+"tests/**" = ["S101", "S105", "S106"]
