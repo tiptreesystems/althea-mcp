@@ -31,10 +31,11 @@ def load_credentials(path: Path) -> StoredCredentials | None:
         )
     try:
         return StoredCredentials.model_validate(payload)
-    except ValidationError as exc:
+    except ValidationError:
         raise AltheaConfigurationError(
-            f"Could not read Althea MCP credentials from {path}: {exc}"
-        ) from exc
+            f"The Althea MCP credentials at {path} have an invalid format. "
+            "Run `althea-mcp setup` to sign in again."
+        ) from None
 
 
 def credentials_lock(path: Path) -> FileLock:

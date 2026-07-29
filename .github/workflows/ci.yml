@@ -14,24 +14,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --frozen --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Ruff lint
-        run: uv run ruff check althea_mcp
+        run: uv run ruff check althea_mcp tests
 
       - name: Ruff format
         run: uv run ruff format --check .
+
+      - name: Tests
+        run: uv run pytest -q
 
       - name: Build distribution
         run: |
@@ -40,5 +43,5 @@ jobs:
 
       - name: Dependency audit
         run: |
-          uv export --frozen --no-emit-project --all-extras > audit-requirements.txt
+          uv export --locked --no-emit-project --all-extras > audit-requirements.txt
           uvx pip-audit -r audit-requirements.txt --disable-pip

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tiptreesystems/althea-mcp",
+  "title": "Althea MCP",
+  "description": "Connect MCP clients to your personal Althea for persistent conversations and shared memory.",
+  "version": "0.1.0",
+  "websiteUrl": "https://github.com/tiptreesystems/althea-mcp",
+  "repository": {
+    "url": "https://github.com/tiptreesystems/althea-mcp",
+    "source": "github",
+    "id": "1313111516"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "althea-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

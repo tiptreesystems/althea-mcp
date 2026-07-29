@@ -9,13 +9,13 @@ from althea_mcp.config import PACKAGE_VERSION, RuntimeConfig, runtime_config_fro
 from althea_mcp.tools import AltheaTools
 
 SERVER_INSTRUCTIONS = (
-    "This server connects to the user's personal Althea: the same canonical "
-    "Althea account, dossier, and long-term memory they use through the web, "
-    "email, SMS, and other channels. It is not the retired Platform API and "
-    "does not create a separate agent. Calls that send messages are real "
-    "communications to Althea and may cause her to begin work. Use ask_althea "
-    "when an immediate reply is needed, send_message_to_althea for asynchronous "
-    "updates or requests, and get_althea_messages to inspect the MCP thread."
+    "This server connects to the user's personal Althea and uses the same "
+    "account, profile, and long-term memory available through Althea's other "
+    "channels. Each configured thread key has its own conversation. Calls that "
+    "send messages are real communications to Althea and may cause her to begin "
+    "work. Use ask_althea when an immediate reply is needed, "
+    "send_message_to_althea for asynchronous updates or requests, and "
+    "get_althea_messages to inspect the MCP thread."
 )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from pathlib import Path
 from typing import Any, TypeVar
@@ -31,6 +32,14 @@ from althea_mcp.models import (
 
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
 ACCESS_TOKEN_REFRESH_MARGIN_SECONDS = 60 * 90
+ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_:-]{0,63}$")
+SENSITIVE_ERROR_PATHS = frozenset(
+    {
+        "/otp/signin",
+        "/mcp/auth/otp/signin/verify",
+        "/mcp/auth/token",
+    }
+)
 
 
 class AltheaClient:
@@ -95,8 +104,22 @@ class AltheaClient:
             "/mcp/auth/otp/signin/verify",
         )
 
+    async def initialize_profile(self, *, access_token: str) -> APIResponse:
+        """Schedule canonical profile initialization used after web sign-in."""
+        try:
+            response_payload = await self._request_json(
+                "POST",
+                "/initialize_profile",
+                authorization=access_token,
+            )
+            return self._validate(APIResponse, response_payload, "/initialize_profile")
+        except AltheaAPIError as exc:
+            if exc.status_code not in {404, 405}:
+                raise
+            return await self.create_dossier(access_token=access_token)
+
     async def create_dossier(self, *, access_token: str) -> APIResponse:
-        """Schedule the same idempotent dossier setup used after web sign-in."""
+        """Call the deprecated initialization route for older integrations."""
         response_payload = await self._request_json(
             "POST",
             "/create_dossier",
@@ -190,7 +213,7 @@ class AltheaClient:
                 raise self._reauthentication_error()
 
         if not response.is_success:
-            raise self._api_error(response)
+            raise self._api_error(response, path=path)
         try:
             return response.json()
         except ValueError as exc:
@@ -358,38 +381,58 @@ class AltheaClient:
     ) -> ResponseModel:
         try:
             return model.model_validate(payload)
-        except ValidationError as exc:
+        except ValidationError:
             raise AltheaProtocolError(
-                f"Althea returned an unexpected response for {path}: {exc}"
-            ) from exc
+                f"Althea returned an unexpected response for {path}"
+            ) from None
 
     @staticmethod
-    def _api_error(response: httpx.Response) -> AltheaAPIError:
+    def _api_error(response: httpx.Response, *, path: str) -> AltheaAPIError:
         try:
             response_payload: Any = response.json()
         except ValueError:
-            response_payload = response.text.strip()
+            response_payload = None
 
-        detail = (
-            response_payload.get("detail")
-            if isinstance(response_payload, dict)
-            else response_payload
-        )
-        error_code = detail.get("error_code") if isinstance(detail, dict) else None
-        if isinstance(detail, dict):
-            message = detail.get("message") or str(detail)
-        elif detail:
-            message = str(detail)
-        else:
-            message = response.reason_phrase or "Althea request failed"
+        detail_payload: Any = None
+        top_level_message: Any = None
+        if isinstance(response_payload, dict):
+            detail_payload = response_payload.get("detail")
+            top_level_message = response_payload.get("message")
+
+        error_code: str | None = None
+        detail_message: Any = None
+        if isinstance(detail_payload, dict):
+            candidate_error_code = detail_payload.get("error_code")
+            if isinstance(candidate_error_code, str) and ERROR_CODE_PATTERN.fullmatch(
+                candidate_error_code
+            ):
+                error_code = candidate_error_code
+            detail_message = detail_payload.get("message")
+
+        message = None
+        if path not in SENSITIVE_ERROR_PATHS:
+            message = AltheaClient._safe_server_message(detail_message or top_level_message)
 
         if response.status_code == 401:
             message = (
                 "Authentication failed. Run `althea-mcp setup` in a separate terminal, then retry."
             )
+        elif message is None:
+            message = f"Althea request failed (HTTP {response.status_code})"
+
+        safe_detail = {"error_code": error_code} if error_code is not None else None
         return AltheaAPIError(
             message,
             status_code=response.status_code,
             error_code=error_code,
-            detail=detail,
+            detail=safe_detail,
         )
+
+    @staticmethod
+    def _safe_server_message(value: Any) -> str | None:
+        if not isinstance(value, str):
+            return None
+        message = " ".join(value.split())
+        if not message or len(message) > 300:
+            return None
+        return message

@@ -10,6 +10,7 @@ from althea_mcp import __version__
 from althea_mcp.config import (
     credentials_path_from_env,
     normalize_app_url,
+    public_site_url_from_env,
     runtime_config_from_env,
 )
 from althea_mcp.errors import AltheaError
@@ -49,17 +50,23 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_parser()
     arguments = parser.parse_args(argv)
-    try:
-        if arguments.command == "setup":
+    if arguments.command == "setup":
+        try:
             config = runtime_config_from_env(validate_saved_credentials=False)
             credentials_path = (
                 arguments.credentials_file.expanduser()
                 if arguments.credentials_file is not None
                 else credentials_path_from_env()
             )
+            app_url = normalize_app_url(arguments.app_url or config.app_url)
             config = replace(
                 config,
-                app_url=normalize_app_url(arguments.app_url or config.app_url),
+                app_url=app_url,
+                public_site_url=(
+                    public_site_url_from_env(app_url)
+                    if arguments.app_url is not None
+                    else config.public_site_url
+                ),
                 credentials_path=credentials_path,
             )
             result = asyncio.run(
@@ -71,9 +78,18 @@ def main(argv: Sequence[str] | None = None) -> None:
             if not result.configured:
                 raise SystemExit(2)
             return
+        except EOFError:
+            parser.exit(1, "\nalthea-mcp: setup cancelled because input ended.\n")
+        except KeyboardInterrupt:
+            parser.exit(130, "\nalthea-mcp: setup interrupted.\n")
+        except (AltheaError, ValueError) as exc:
+            parser.exit(1, f"althea-mcp: {exc}\n")
 
+    try:
         from althea_mcp.server import main as serve
 
         serve()
+    except KeyboardInterrupt:
+        parser.exit(130, "\nalthea-mcp: server stopped.\n")
     except (AltheaError, ValueError) as exc:
         parser.exit(1, f"althea-mcp: {exc}\n")
