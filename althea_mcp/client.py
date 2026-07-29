@@ -119,6 +119,7 @@ class AltheaClient:
         *,
         thread_key: str,
         sender: str | None = None,
+        cycle: int | None = None,
         created_after: float | None = None,
         created_before: float | None = None,
         offset: int = 0,
@@ -133,6 +134,8 @@ class AltheaClient:
         }
         if sender is not None:
             parameters["sender"] = sender
+        if cycle is not None:
+            parameters["cycle"] = cycle
         if created_after is not None:
             parameters["created_after"] = created_after
         if created_before is not None:
