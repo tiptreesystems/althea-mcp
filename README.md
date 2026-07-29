@@ -34,13 +34,22 @@ correct journey:
 - Access still required: the CLI opens the existing Althea access-request page.
   Complete that journey, then rerun the same setup command.
 
-After verification, setup creates a dedicated, 90-day MCP API key and stores it at
+After verification, setup creates an ordinary platform usage session: the
+access session lasts 7 days and its rotating refresh-token family has a 14-day
+absolute lifetime. The access and refresh tokens are stored at
 `~/.config/althea-mcp/credentials.json` with user-only file permissions where
-the operating system supports them. The key is scoped to the Althea MCP
-frontend channel; it is not a general-purpose Althea or ACTX credential. Setup
-also schedules the same idempotent dossier setup used after web sign-in. It
-does not persist the interactive login token or print the API key. Optional
-onboarding details can still be completed in the Althea web app.
+the operating system supports them. Access tokens are refreshed automatically
+before they expire; refresh rotation is locked across local MCP processes so
+Codex, Claude, and other clients can safely share the credential file. Setup
+also schedules the same idempotent dossier setup used after web sign-in.
+Optional onboarding details can still be completed in the Althea web app.
+
+When the 14-day refresh-token family expires or is revoked, a tool call reports
+that authentication is required. Rerun `althea-mcp setup` in a separate
+terminal, enter the emailed verification code, and retry the call. Running MCP
+processes reload the replaced credentials automatically. Credentials from the
+earlier API-key format require this one-time setup again; a stale
+`ALTHEA_API_KEY` setting is ignored once the new session file exists.
 
 Once the package is on PyPI, the setup command becomes:
 
@@ -129,10 +138,9 @@ clients concurrently.
 
 ## Configuration
 
-- `ALTHEA_API_KEY`
-  Overrides the API key in the credentials file.
 - `ALTHEA_APP_URL`
-  Defaults to `https://althea.tiptreesystems.com`.
+  Defaults to `https://althea.tiptreesystems.com`. Credentials are bound to
+  this URL; rerun setup for the new URL before changing it.
 - `ALTHEA_THREAD_KEY`
   Stable conversation-thread identifier. Defaults to `mcp`.
 - `ALTHEA_MCP_CREDENTIALS_FILE`
@@ -146,8 +154,8 @@ clients concurrently.
 - `ALTHEA_MCP_LOG_LEVEL`
   Defaults to `WARNING`.
 
-Environment variables are useful for automation, but the normal user journey
-is simply `althea-mcp setup`; no API key needs to be pasted into an MCP config.
+The normal user journey is simply `althea-mcp setup`; no token needs to be
+pasted into an MCP config.
 
 ## Architecture
 
@@ -159,22 +167,17 @@ routes:
 | --- | --- |
 | Unified sign-in/sign-up detection | `POST /otp/signin` |
 | CLI OTP verification | `POST /mcp/auth/otp/signin/verify` |
+| Rotate the MCP usage session | `POST /mcp/auth/token` |
 | Idempotent profile/dossier setup | `POST /create_dossier` |
-| Create and manage MCP-scoped keys | `/mcp/api-keys` |
 | Send to the user's Althea | `POST /mcp/threads/{thread_key}/messages` |
 | Read the MCP conversation | `GET /mcp/threads/{thread_key}/messages` |
 
-The stored key goes only to the frontend MCP routes. The frontend authenticates
-it through a service-only auth-server exchange and receives a two-hour
-delegated user token. That delegated token—not the MCP key—is sent to ACTX.
-The duration covers queued wakes and code-assistant work. The frontend uses
-the token to resolve the main user, provision or find that user's canonical
-Althea, and own the MCP `ChannelSession`.
-
-Creating, listing, or revoking MCP keys requires an interactive login token;
-an MCP key cannot mint or manage keys. Revoking the key deactivates the usage
-session behind both the key and any delegated token. The MCP package does not
-know about ACTX internals.
+The MCP OTP route issues the same ordinary usage session used by the platform:
+a 7-day access session within a rotating 14-day refresh-token family. The MCP
+package sends the current access token to the frontend, which resolves the main
+user, provisions or finds that user's canonical Althea, and owns the MCP
+`ChannelSession`. The same access token is used for the corresponding ACTX
+work; the refresh token never leaves the local package's token-rotation route.
 
 ## Local development
 

@@ -9,6 +9,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from althea_mcp.credentials import load_credentials
+from althea_mcp.errors import AltheaConfigurationError
+from althea_mcp.models import StoredCredentials
 
 PACKAGE_NAME = "althea-mcp"
 DEFAULT_APP_URL = "https://althea.tiptreesystems.com"
@@ -36,7 +38,6 @@ DEFAULT_USER_AGENT = f"{PACKAGE_NAME}/{PACKAGE_VERSION}"
 @dataclass(frozen=True)
 class RuntimeConfig:
     app_url: str
-    api_key: str | None
     thread_key: str
     credentials_path: Path
     http_timeout: float
@@ -45,12 +46,11 @@ class RuntimeConfig:
     user_agent: str
     log_level: str
 
-    def require_api_key(self) -> str:
-        if self.api_key:
-            return self.api_key
-        raise ValueError(
-            "Althea MCP is not configured. Run `althea-mcp setup` first, or set ALTHEA_API_KEY."
-        )
+    def require_credentials(self) -> StoredCredentials:
+        credentials = load_credentials(self.credentials_path)
+        if credentials is None:
+            raise ValueError("Althea MCP is not configured. Run `althea-mcp setup` first.")
+        return credentials
 
 
 def normalize_app_url(value: str | None) -> str:
@@ -104,24 +104,38 @@ def credentials_path_from_env() -> Path:
     return Path(configured_path or DEFAULT_CREDENTIALS_PATH).expanduser()
 
 
-def runtime_config_from_env() -> RuntimeConfig:
+def runtime_config_from_env(
+    *,
+    validate_saved_credentials: bool = True,
+) -> RuntimeConfig:
     credentials_path = credentials_path_from_env()
-    credentials = load_credentials(credentials_path)
+    try:
+        credentials = load_credentials(credentials_path)
+    except AltheaConfigurationError:
+        if validate_saved_credentials:
+            raise
+        credentials = None
     configured_app_url = os.environ.get("ALTHEA_APP_URL")
     app_url = normalize_app_url(
         configured_app_url or (credentials.app_url if credentials is not None else None)
     )
-    configured_api_key = os.environ.get("ALTHEA_API_KEY")
-    api_key = (
-        configured_api_key.strip()
-        if configured_api_key
-        else credentials.api_key
-        if credentials is not None
-        else None
-    )
+    if (
+        validate_saved_credentials
+        and credentials is not None
+        and normalize_app_url(credentials.app_url) != app_url
+    ):
+        raise AltheaConfigurationError(
+            f"Saved Althea MCP credentials are bound to {credentials.app_url}, "
+            f"not {app_url}. Run `althea-mcp setup --app-url {app_url}` to sign "
+            "in to the configured server."
+        )
+    if validate_saved_credentials and credentials is None and os.environ.get("ALTHEA_API_KEY"):
+        raise ValueError(
+            "ALTHEA_API_KEY is no longer supported. Run `althea-mcp setup` "
+            "to create a refreshable MCP session."
+        )
     return RuntimeConfig(
         app_url=app_url,
-        api_key=api_key,
         thread_key=_parse_thread_key(os.environ.get("ALTHEA_THREAD_KEY")),
         credentials_path=credentials_path,
         http_timeout=_parse_positive_float(

@@ -59,13 +59,16 @@ def create_mcp(
     client: AltheaClient | None = None,
 ) -> Any:
     runtime_config = config or runtime_config_from_env()
-    api_key = runtime_config.require_api_key()
-    althea_client = client or AltheaClient(
-        app_url=runtime_config.app_url,
-        api_key=api_key,
-        timeout=runtime_config.http_timeout,
-        user_agent=runtime_config.user_agent,
-    )
+    if client is None:
+        runtime_config.require_credentials()
+        althea_client = AltheaClient(
+            app_url=runtime_config.app_url,
+            credentials_path=runtime_config.credentials_path,
+            timeout=runtime_config.http_timeout,
+            user_agent=runtime_config.user_agent,
+        )
+    else:
+        althea_client = client
     tool_implementations = AltheaTools(althea_client, runtime_config)
 
     fast_mcp = _load_fast_mcp()

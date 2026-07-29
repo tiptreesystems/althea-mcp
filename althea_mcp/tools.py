@@ -6,6 +6,7 @@ from typing import Any
 
 from althea_mcp.client import AltheaClient
 from althea_mcp.config import RuntimeConfig
+from althea_mcp.errors import AltheaProtocolError
 
 
 class AltheaTools:
@@ -30,6 +31,9 @@ class AltheaTools:
             thread_key=self.config.thread_key,
             content=message,
         )
+        cycle = sent_message.info.get("cycle") if sent_message.info else None
+        if type(cycle) is not int:
+            raise AltheaProtocolError("Althea did not return cycle metadata for the sent message")
         deadline = time.monotonic() + self.config.poll_timeout
 
         while time.monotonic() < deadline:
@@ -38,6 +42,7 @@ class AltheaTools:
             responses = await self.client.get_messages(
                 thread_key=self.config.thread_key,
                 sender="assistant",
+                cycle=cycle,
                 created_after=sent_message.created_at,
                 limit=1,
             )
@@ -67,6 +72,7 @@ class AltheaTools:
             "status": "sent",
             "message_id": sent_message.id,
             "created_at": sent_message.created_at,
+            "cycle": sent_message.info.get("cycle") if sent_message.info else None,
             "thread_key": self.config.thread_key,
         }
 
@@ -101,6 +107,7 @@ class AltheaTools:
                 "sender": message.payload.sender,
                 "content": message.payload.content,
                 "created_at": message.created_at,
+                "cycle": message.info.get("cycle") if message.info else None,
             }
             for message in reversed(messages)
         ]
