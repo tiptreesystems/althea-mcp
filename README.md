@@ -13,9 +13,10 @@
 
 <p align="center">
   <a href="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml"><img src="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://github.com/tiptreesystems/althea-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/tiptreesystems/althea-mcp?label=Release" alt="Latest GitHub release" /></a>
   <a href="https://pypi.org/project/althea-mcp/"><img src="https://img.shields.io/pypi/v/althea-mcp?label=PyPI" alt="PyPI version" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&amp;logoColor=white" alt="Python 3.11+" /></a>
-  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-local%20server-638B8D" alt="Local MCP server" /></a>
+  <a href="https://registry.modelcontextprotocol.io/?q=io.github.tiptreesystems%2Falthea-mcp"><img src="https://img.shields.io/badge/MCP%20Registry-listed-638B8D" alt="MCP Registry listing" /></a>
   <a href="https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6D70.svg" alt="MIT license" /></a>
 </p>
 
