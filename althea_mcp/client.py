@@ -325,6 +325,12 @@ class AltheaClient:
             raise AltheaConfigurationError(
                 "Althea MCP is not configured. Run `althea-mcp setup` first."
             )
+        if credentials.app_url.rstrip("/") != self.app_url:
+            raise AltheaConfigurationError(
+                f"Saved Althea MCP credentials are bound to {credentials.app_url}, "
+                f"not {self.app_url}. Restart this MCP server with the matching "
+                "ALTHEA_APP_URL."
+            )
         return credentials
 
     def _require_credentials_path(self) -> Path:
