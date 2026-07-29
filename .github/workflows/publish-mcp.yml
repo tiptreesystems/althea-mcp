@@ -16,7 +16,7 @@ jobs:
     name: Publish server metadata
     runs-on: ubuntu-latest
     environment:
-      name: mcp-registry
+      name: pypi
       url: https://registry.modelcontextprotocol.io/?q=io.github.tiptreesystems%2Falthea-mcp
     permissions:
       contents: read

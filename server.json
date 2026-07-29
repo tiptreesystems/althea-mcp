@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.tiptreesystems/althea-mcp",
   "title": "Althea MCP",
-  "description": "Connect MCP clients to your personal Althea for persistent conversations and shared memory.",
+  "description": "Connect coding agents to your Althea and, through her, a consent-first network of ML researchers.",
   "version": "0.1.0",
   "websiteUrl": "https://github.com/tiptreesystems/althea-mcp",
   "repository": {

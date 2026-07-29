@@ -20,7 +20,7 @@ from althea_mcp.onboarding import run_setup
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="althea-mcp",
-        description="Bring your personal Althea into MCP-compatible AI tools.",
+        description="Connect coding agents to your personal Althea.",
     )
     parser.add_argument("--version", action="version", version=__version__)
     subparsers = parser.add_subparsers(dest="command")

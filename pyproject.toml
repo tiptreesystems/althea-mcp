@@ -1,7 +1,7 @@
 [project]
 name = "althea-mcp"
 version = "0.1.0"
-description = "Bring your personal Althea into MCP-compatible AI tools."
+description = "Connect coding agents to your Althea and her network of ML researchers."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -11,9 +11,11 @@ authors = [
 keywords = [
     "althea",
     "ai-agent",
+    "coding-agent",
     "mcp",
     "model-context-protocol",
     "personal-agent",
+    "research-network",
 ]
 requires-python = ">=3.11"
 classifiers = [

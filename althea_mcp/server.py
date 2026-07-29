@@ -9,11 +9,14 @@ from althea_mcp.config import PACKAGE_VERSION, RuntimeConfig, runtime_config_fro
 from althea_mcp.tools import AltheaTools
 
 SERVER_INSTRUCTIONS = (
-    "This server connects to the user's personal Althea and uses the same "
-    "account, profile, and long-term memory available through Althea's other "
-    "channels. Each configured thread key has its own conversation. Calls that "
-    "send messages are real communications to Althea and may cause her to begin "
-    "work. Use ask_althea when an immediate reply is needed, "
+    "This server gives the coding agent a direct line to the user's personal "
+    "Althea. She uses the same account, profile, and long-term research memory "
+    "available through Althea's other channels. When useful, Althea can ask a "
+    "consent-first network of verified ML researchers for help; the coding agent "
+    "talks to Althea, not to researchers directly. Each configured thread key "
+    "has its own conversation. Calls that send messages are real communications "
+    "to Althea and may cause her to begin work. Use ask_althea when an immediate "
+    "reply is needed, "
     "send_message_to_althea for asynchronous updates or requests, and "
     "get_althea_messages to inspect the MCP thread."
 )

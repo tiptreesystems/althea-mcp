@@ -21,8 +21,9 @@ class AltheaTools:
 
         Use this when the user wants to ask their Althea a question, share
         context, or request work. This reaches the same canonical Althea account
-        used on the web and other channels. Follow-up calls continue the
-        configured MCP thread.
+        used on the web and other channels. Through Althea, a request can also
+        draw on her consent-first network of verified ML researchers. Follow-up
+        calls continue the configured MCP thread.
 
         Args:
             message: The message to send to Althea.
