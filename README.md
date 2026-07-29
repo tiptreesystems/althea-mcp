@@ -1,34 +1,40 @@
 <!-- mcp-name: io.github.tiptreesystems/althea-mcp -->
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/tiptreesystems/althea-mcp/main/assets/banner.svg" alt="Althea MCP. Your personal Althea in local MCP clients." width="100%" />
+  <img src="https://raw.githubusercontent.com/tiptreesystems/althea-mcp/main/assets/althea-logo.svg" alt="Althea" width="156" />
+</p>
+
+<h1 align="center">Althea MCP</h1>
+
+<p align="center">
+  <strong>A direct line from your coding agent to your Althea.</strong><br />
+  Shared research memory and a consent-first network of verified ML researchers.
 </p>
 
 <p align="center">
   <a href="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml"><img src="https://github.com/tiptreesystems/althea-mcp/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://pypi.org/project/althea-mcp/"><img src="https://img.shields.io/pypi/v/althea-mcp?label=PyPI" alt="PyPI version" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&amp;logoColor=white" alt="Python 3.11+" /></a>
   <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-local%20server-638B8D" alt="Local MCP server" /></a>
   <a href="https://github.com/tiptreesystems/althea-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6D70.svg" alt="MIT license" /></a>
 </p>
 
-# Althea MCP
+Give Codex, Claude Code, and other coding agents a direct line to your personal
+[Althea](https://althea.tiptreesystems.com). They can hand her questions, code,
+and context from the repository in front of them. Althea brings your shared
+research memory and, when useful, can ask a consent-first network of verified
+ML researchers for help.
 
-Give Codex, Claude Code, Claude Desktop, and other local MCP clients a direct
-line to your personal [Althea](https://althea.tiptreesystems.com).
-
-- **One Althea across every channel.** MCP uses your existing account, profile,
-  and long-term memory.
+- **Agents that can talk to each other.** Pass questions, code, experiment
+  results, and repository context between your coding agent and Althea.
+- **Your Althea, with your context.** MCP uses your existing account, profile,
+  and long-term research memory.
+- **A route into the researcher network.** Althea can ask verified ML
+  researchers for help, with consent before private context is shared.
 - **Client-specific conversations.** Codex and Claude stay separate when you
   give them distinct thread keys, while Althea keeps your shared context.
-- **Fast or asynchronous.** Wait for a reply, leave a message for longer work,
+- **Work asynchronously.** Wait for a reply, leave a message for longer work,
   or read the thread later.
-- **Private sign-in.** Authenticate with an emailed code. Your MCP configuration
-  contains no API key or pasted token.
-
-> [!IMPORTANT]
-> Althea MCP is currently a pre-release. The source is public for review, but
-> the production MCP routes are not live yet. Production access will be
-> announced with the first tagged release.
 
 [Setup](#setup) · [Connect a client](#connect-an-mcp-client) ·
 [First conversation](#start-a-conversation) · [Tools](#tools) ·
@@ -38,10 +44,10 @@ line to your personal [Althea](https://althea.tiptreesystems.com).
 ## Setup
 
 You need access to Althea and [uv](https://docs.astral.sh/uv/getting-started/installation/).
-Until the first PyPI release, install the package directly from GitHub:
+Install Althea MCP from PyPI, then sign in with an emailed verification code:
 
 ```bash
-uv tool install git+https://github.com/tiptreesystems/althea-mcp.git
+uv tool install althea-mcp
 althea-mcp setup
 ```
 
@@ -173,12 +179,15 @@ Restart the client after changing its MCP configuration.
 Try one of these prompts in your MCP client:
 
 ```text
-Ask my Althea what I have been working on recently.
+Ask my Althea whether anyone in the researcher network has worked on this
+failure mode. Share only the sanitized summary below:
+[summary]
 ```
 
 ```text
 Send this context to my Althea without waiting for a reply:
-I am comparing the two approaches in the current design document.
+The latest experiment rules out the data-loader hypothesis. The remaining
+failure starts after gradient accumulation.
 ```
 
 ```text
@@ -203,22 +212,24 @@ Althea artifacts.
 ## How it works
 
 ```text
-Codex / Claude / another MCP client
-                │ local stdio
-                ▼
-           Althea MCP
-                │ HTTPS
-                ▼
-          Althea frontend
-                │
-                ├── your account, profile, and long-term memory
-                └── a persisted conversation for this thread key
+Codex / Claude Code / another coding agent
+                    │ local stdio
+                    ▼
+               Althea MCP
+                    │ HTTPS
+                    ▼
+              your Althea
+                    │
+                    ├── your profile and long-term research memory
+                    ├── a persisted conversation for this thread key
+                    └── a consent-first network of verified ML researchers
 ```
 
 Althea MCP is a small public adapter. The frontend authenticates the user,
 resolves their canonical Althea, sends messages, and stores the resulting
 conversation. The package polls those persisted messages when a caller waits
-for a reply.
+for a reply. The coding agent talks to Althea, and Althea coordinates with the
+researcher network when a request would benefit from outside expertise.
 
 ## Sign-in and sessions
 
@@ -246,6 +257,8 @@ pre-existing custom directory.
   Even with local transport, conversation data leaves your machine.
 - The connected MCP host and model can see tool arguments and replies. They may
   retain that data under their own privacy and retention policies.
+- When Althea asks the researcher network for help, she requests consent before
+  sharing information drawn from a private conversation.
 - The package sends access credentials only to the Althea origin they were
   issued for. Changing `ALTHEA_APP_URL` requires a new setup.
 - The refresh token is sent only to the session rotation endpoint.

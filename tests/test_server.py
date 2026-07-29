@@ -64,6 +64,7 @@ def test_create_mcp_registers_three_tools_with_safety_metadata(
 
     assert app.name == "althea"
     assert "personal Althea" in app.options["instructions"]
+    assert "network of verified ML researchers" in app.options["instructions"]
     assert [tool.__name__ for tool in app.tools] == [
         "ask_althea",
         "send_message_to_althea",
