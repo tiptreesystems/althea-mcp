@@ -95,8 +95,17 @@ class AltheaClient:
             "/mcp/auth/otp/signin/verify",
         )
 
+    async def initialize_profile(self, *, access_token: str) -> APIResponse:
+        """Schedule canonical profile initialization used after web sign-in."""
+        response_payload = await self._request_json(
+            "POST",
+            "/initialize_profile",
+            authorization=access_token,
+        )
+        return self._validate(APIResponse, response_payload, "/initialize_profile")
+
     async def create_dossier(self, *, access_token: str) -> APIResponse:
-        """Schedule the same idempotent dossier setup used after web sign-in."""
+        """Call the deprecated initialization route for older integrations."""
         response_payload = await self._request_json(
             "POST",
             "/create_dossier",

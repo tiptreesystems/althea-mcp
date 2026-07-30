@@ -77,7 +77,7 @@ async def run_setup(
             ),
         )
         save_credentials(config.credentials_path, credentials)
-        await _schedule_dossier(
+        await _schedule_profile_initialization(
             althea_client,
             access_token=token_response.access_token,
             output_fn=output_fn,
@@ -105,16 +105,20 @@ async def run_setup(
     )
 
 
-async def _schedule_dossier(
+async def _schedule_profile_initialization(
     client: AltheaClient,
     *,
     access_token: str,
     output_fn: Callable[[str], None],
 ) -> None:
     try:
-        await client.create_dossier(access_token=access_token)
+        initialize_profile = getattr(client, "initialize_profile", None)
+        if initialize_profile is not None:
+            await initialize_profile(access_token=access_token)
+        else:
+            await client.create_dossier(access_token=access_token)
     except AltheaError as exc:
-        # Dossier generation enriches the agent but is not required for the
+        # Profile generation enriches the agent but is not required for the
         # credential handoff. The frontend retries it on a later web sign-in.
         output_fn(f"Note: Althea profile enrichment was not scheduled: {exc}")
 

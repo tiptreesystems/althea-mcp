@@ -41,7 +41,7 @@ absolute lifetime. The access and refresh tokens are stored at
 the operating system supports them. Access tokens are refreshed automatically
 before they expire; refresh rotation is locked across local MCP processes so
 Codex, Claude, and other clients can safely share the credential file. Setup
-also schedules the same idempotent dossier setup used after web sign-in.
+also schedules the same idempotent profile initialization used after web sign-in.
 Optional onboarding details can still be completed in the Althea web app.
 
 When the 14-day refresh-token family expires or is revoked, a tool call reports
@@ -168,7 +168,7 @@ routes:
 | Unified sign-in/sign-up detection | `POST /otp/signin` |
 | CLI OTP verification | `POST /mcp/auth/otp/signin/verify` |
 | Rotate the MCP usage session | `POST /mcp/auth/token` |
-| Idempotent profile/dossier setup | `POST /create_dossier` |
+| Idempotent profile initialization | `POST /initialize_profile` |
 | Send to the user's Althea | `POST /mcp/threads/{thread_key}/messages` |
 | Read the MCP conversation | `GET /mcp/threads/{thread_key}/messages` |
 
