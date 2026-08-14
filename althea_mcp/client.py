@@ -25,6 +25,8 @@ from althea_mcp.errors import (
 )
 from althea_mcp.models import (
     APIResponse,
+    Conversation,
+    ConversationLog,
     Message,
     StoredCredentials,
     TokenResponse,
@@ -174,6 +176,43 @@ class AltheaClient:
                 "Althea returned an invalid message list: expected a JSON array"
             )
         return [self._validate(Message, item, path) for item in response_payload]
+
+    async def search_conversations(
+        self,
+        *,
+        query: str | None = None,
+        limit: int = 10,
+    ) -> list[Conversation]:
+        path = "/mcp/conversations"
+        parameters: dict[str, str | int | float | bool] = {"limit": limit}
+        if query is not None:
+            parameters["query"] = query
+        response_payload = await self._request_json(
+            "GET",
+            path,
+            params=parameters,
+            authenticated=True,
+        )
+        if not isinstance(response_payload, list):
+            raise AltheaProtocolError(
+                "Althea returned an invalid conversation list: expected a JSON array"
+            )
+        return [self._validate(Conversation, item, path) for item in response_payload]
+
+    async def get_conversation_log(
+        self,
+        *,
+        conversation_id: str,
+        limit: int = 100,
+    ) -> ConversationLog:
+        path = f"/mcp/conversations/{quote(conversation_id, safe='')}/messages"
+        response_payload = await self._request_json(
+            "GET",
+            path,
+            params={"limit": limit},
+            authenticated=True,
+        )
+        return self._validate(ConversationLog, response_payload, path)
 
     async def _request_json(
         self,

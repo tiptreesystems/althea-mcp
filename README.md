@@ -205,10 +205,12 @@ personal Althea and may cause her to begin work.
 | `ask_althea(message)` | Sends a message and uses a 120-second polling window by default for the first reply. If the window expires, the work may still continue. |
 | `send_message_to_althea(message)` | Sends a message immediately and returns a receipt without waiting. Use it for context, notes, and longer requests. |
 | `get_althea_messages(sender=None, limit=10)` | Returns 1 to 100 recent messages in chronological order. Optionally filter by `user`, `assistant`, or `system`. |
+| `search_althea_conversations(query=None, limit=10)` | Finds conversations across the user's Althea account by title or topic. With no query, returns recent conversations. |
+| `get_althea_conversation_log(conversation_id, limit=100)` | Returns the last 1 to 100 messages from any owned conversation in chronological order, together with its total message count. |
 
-The two send tools are marked as state-changing. Message retrieval is read-only.
-The current tool surface is text-only. It does not expose attachments or other
-Althea artifacts.
+The two send tools are marked as state-changing. Conversation search and message
+retrieval are read-only. The current tool surface is text-only. It does not
+expose attachments or other Althea artifacts.
 
 ## How it works
 
@@ -243,6 +245,8 @@ Setup creates a normal Althea usage session:
   without racing refresh-token rotation.
 - When the session expires or is revoked, run `althea-mcp setup` again in a
   separate terminal. Running MCP processes reload the replacement credentials.
+- Signing in again rotates credentials only. It does not replace conversation
+  history when the Althea account and `ALTHEA_THREAD_KEY` stay the same.
 
 Credentials are stored as plaintext JSON at
 `~/.config/althea-mcp/credentials.json`. On operating systems that support Unix

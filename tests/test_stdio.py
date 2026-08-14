@@ -47,4 +47,6 @@ async def test_installed_command_completes_stdio_handshake(tmp_path: Path) -> No
         "ask_althea",
         "send_message_to_althea",
         "get_althea_messages",
+        "search_althea_conversations",
+        "get_althea_conversation_log",
     ]

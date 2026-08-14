@@ -45,6 +45,36 @@ class Message(BaseModel):
     info: dict[str, Any] | None = None
 
 
+class Conversation(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    title: str | None = None
+    platform: str | None = None
+    created_at: float
+    updated_at: float | None = None
+    archived_at: float | None = None
+
+
+class ConversationMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    sender: str | None = None
+    content: str | None = None
+    created_at: float
+
+
+class ConversationLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    conversation: Conversation
+    total_message_count: int
+    returned_message_count: int
+    has_earlier_messages: bool
+    messages: list[ConversationMessage]
+
+
 class StoredCredentials(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

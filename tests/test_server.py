@@ -34,7 +34,7 @@ def make_config(tmp_path: Path) -> RuntimeConfig:
     )
 
 
-def test_create_mcp_registers_three_tools_with_safety_metadata(
+def test_create_mcp_registers_five_tools_with_safety_metadata(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -69,10 +69,14 @@ def test_create_mcp_registers_three_tools_with_safety_metadata(
         "ask_althea",
         "send_message_to_althea",
         "get_althea_messages",
+        "search_althea_conversations",
+        "get_althea_conversation_log",
     ]
     assert app.annotations == [
         {"read_only": False},
         {"read_only": False},
+        {"read_only": True},
+        {"read_only": True},
         {"read_only": True},
     ]
 
@@ -90,8 +94,12 @@ async def test_real_mcp_discovery_exposes_version_and_annotations(
         "ask_althea",
         "send_message_to_althea",
         "get_althea_messages",
+        "search_althea_conversations",
+        "get_althea_conversation_log",
     ]
     assert listed_tools[0].annotations.readOnlyHint is False
     assert listed_tools[0].annotations.idempotentHint is False
     assert listed_tools[2].annotations.readOnlyHint is True
     assert listed_tools[2].annotations.idempotentHint is True
+    assert listed_tools[4].annotations.readOnlyHint is True
+    assert listed_tools[4].annotations.idempotentHint is True

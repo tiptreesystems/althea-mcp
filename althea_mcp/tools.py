@@ -72,6 +72,7 @@ class AltheaTools:
         return {
             "status": "sent",
             "message_id": sent_message.id,
+            "conversation_id": sent_message.agent_session_id,
             "created_at": sent_message.created_at,
             "cycle": sent_message.info.get("cycle") if sent_message.info else None,
             "thread_key": self.config.thread_key,
@@ -105,6 +106,8 @@ class AltheaTools:
         return [
             {
                 "id": message.id,
+                "conversation_id": message.agent_session_id,
+                "thread_key": self.config.thread_key,
                 "sender": message.payload.sender,
                 "content": message.payload.content,
                 "created_at": message.created_at,
@@ -112,3 +115,57 @@ class AltheaTools:
             }
             for message in reversed(messages)
         ]
+
+    async def search_althea_conversations(
+        self,
+        query: str | None = None,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """Find this user's Althea conversations across every channel.
+
+        Use this before `get_althea_conversation_log` when the user identifies
+        a prior conversation by title or topic rather than its conversation ID.
+        With no query, this returns the most recently active conversations.
+
+        Args:
+            query: Optional title or topic to search for.
+            limit: Maximum number of conversations to return, from 1 to 100.
+        """
+        normalized_query = query.strip() if query is not None else None
+        if query is not None and not normalized_query:
+            raise ValueError("query must contain non-whitespace characters")
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+
+        conversations = await self.client.search_conversations(
+            query=normalized_query,
+            limit=limit,
+        )
+        return [conversation.model_dump(mode="json") for conversation in conversations]
+
+    async def get_althea_conversation_log(
+        self,
+        conversation_id: str,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Fetch the recent transcript of any conversation owned by this user.
+
+        This reads conversations from the user's canonical Althea account,
+        including web/app and other channel conversations, not only the
+        configured MCP thread. Messages are returned chronologically. Use
+        `search_althea_conversations` first when the conversation ID is unknown.
+
+        Args:
+            conversation_id: Conversation ID returned by the search tool.
+            limit: Number of recent messages to return, from 1 to 100.
+        """
+        if not conversation_id.strip():
+            raise ValueError("conversation_id must not be empty")
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+
+        conversation_log = await self.client.get_conversation_log(
+            conversation_id=conversation_id.strip(),
+            limit=limit,
+        )
+        return conversation_log.model_dump(mode="json")

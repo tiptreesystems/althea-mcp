@@ -327,3 +327,71 @@ async def test_credentials_are_not_sent_to_another_server(tmp_path: Path) -> Non
             await client.get_messages(thread_key="mcp")
     finally:
         await http_client.aclose()
+
+
+async def test_conversation_search_and_log_use_frontend_routes(tmp_path: Path) -> None:
+    credentials_path = tmp_path / "credentials.json"
+    save_credentials(
+        credentials_path,
+        StoredCredentials(
+            app_url="https://althea.example",
+            access_token="access-token",
+            refresh_token="refresh-token",
+            access_token_expires_at=time.time() + 3600 * 24,
+            refresh_token_expires_at=time.time() + 3600 * 24 * 30,
+        ),
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Authorization"] == "Bearer access-token"
+        if request.url.path == "/mcp/conversations":
+            assert request.url.params["query"] == "Kimi K3"
+            assert request.url.params["limit"] == "5"
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": "ags_kimi",
+                        "title": "Kimi K3",
+                        "platform": "app",
+                        "created_at": 1,
+                    }
+                ],
+            )
+        assert request.url.path == "/mcp/conversations/ags_kimi/messages"
+        assert request.url.params["limit"] == "100"
+        return httpx.Response(
+            200,
+            json={
+                "conversation": {
+                    "id": "ags_kimi",
+                    "title": "Kimi K3",
+                    "platform": "app",
+                    "created_at": 1,
+                },
+                "total_message_count": 102,
+                "returned_message_count": 100,
+                "has_earlier_messages": True,
+                "messages": [
+                    {
+                        "id": "message-3",
+                        "sender": "user",
+                        "content": "Third message",
+                        "created_at": 3,
+                    }
+                ],
+            },
+        )
+
+    client, http_client = mock_client(handler, credentials_path=credentials_path)
+    try:
+        conversations = await client.search_conversations(query="Kimi K3", limit=5)
+        conversation_log = await client.get_conversation_log(
+            conversation_id=conversations[0].id,
+        )
+    finally:
+        await http_client.aclose()
+
+    assert conversations[0].title == "Kimi K3"
+    assert conversation_log.total_message_count == 102
+    assert conversation_log.messages[0].content == "Third message"

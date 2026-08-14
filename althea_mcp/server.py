@@ -18,7 +18,12 @@ SERVER_INSTRUCTIONS = (
     "to Althea and may cause her to begin work. Use ask_althea when an immediate "
     "reply is needed, "
     "send_message_to_althea for asynchronous updates or requests, and "
-    "get_althea_messages to inspect the MCP thread."
+    "get_althea_messages to inspect the configured MCP thread. When the user "
+    "asks to find, fetch, or export a prior conversation from any Althea "
+    "channel, use search_althea_conversations and then "
+    "get_althea_conversation_log. Re-authentication rotates credentials but "
+    "does not create a new MCP thread when the account and thread key are "
+    "unchanged."
 )
 
 
@@ -88,6 +93,12 @@ def create_mcp(
     )
     app.tool(annotations=_tool_annotations(read_only=True))(
         tool_implementations.get_althea_messages
+    )
+    app.tool(annotations=_tool_annotations(read_only=True))(
+        tool_implementations.search_althea_conversations
+    )
+    app.tool(annotations=_tool_annotations(read_only=True))(
+        tool_implementations.get_althea_conversation_log
     )
     return app
 
