@@ -1,6 +1,6 @@
 [project]
 name = "althea-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Connect coding agents to your Althea and her network of ML researchers."
 readme = "README.md"
 license = "MIT"
