@@ -7,6 +7,7 @@ from typing import Any
 from althea_mcp.client import AltheaClient
 from althea_mcp.config import RuntimeConfig
 from althea_mcp.errors import AltheaProtocolError
+from althea_mcp.models import Message
 
 
 class AltheaTools:
@@ -32,14 +33,14 @@ class AltheaTools:
             thread_key=self.config.thread_key,
             content=message,
         )
-        cycle = sent_message.info.get("cycle") if sent_message.info else None
-        if type(cycle) is not int:
-            raise AltheaProtocolError("Althea did not return cycle metadata for the sent message")
         deadline = time.monotonic() + self.config.poll_timeout
 
         while time.monotonic() < deadline:
             remaining_seconds = deadline - time.monotonic()
             await asyncio.sleep(min(self.config.poll_interval, remaining_seconds))
+            cycle = await self._read_cycle(sent_message)
+            if cycle is None:
+                continue
             responses = await self.client.get_messages(
                 thread_key=self.config.thread_key,
                 sender="assistant",
@@ -54,6 +55,30 @@ class AltheaTools:
             f"Althea did not reply within {self.config.poll_timeout:g} seconds. "
             "She may still be working; call `get_althea_messages` to check later."
         )
+
+    async def _read_cycle(self, sent_message: Message) -> int | None:
+        """Return the cycle in which Althea read a sent message, or None if unread.
+
+        The cycle on the send receipt is a guess made before Althea picks the
+        message up, and she relabels the message when she reads it. A thread's
+        second message, for example, is labelled cycle 0 on send but answered
+        in cycle 1, so waiting on the receipt's cycle never finds the reply.
+        """
+        candidates = await self.client.get_messages(
+            thread_key=self.config.thread_key,
+            sender="user",
+            created_after=sent_message.created_at - 1,
+            created_before=sent_message.created_at + 1,
+            limit=100,
+        )
+        for candidate in candidates:
+            if candidate.id != sent_message.id or not candidate.read:
+                continue
+            cycle = candidate.info.get("cycle") if candidate.info else None
+            if type(cycle) is not int:
+                raise AltheaProtocolError("Althea did not record a cycle for the read message")
+            return cycle
+        return None
 
     async def send_message_to_althea(self, message: str) -> dict[str, Any]:
         """Send a message to the user's personal Althea without waiting.

@@ -73,9 +73,12 @@ def make_config() -> RuntimeConfig:
 
 async def test_ask_althea_waits_for_first_assistant_reply() -> None:
     client = FakeMessageClient()
+    read_message = make_message("sent", "user", "Question", 10, cycle=8)
+    read_message.read = True
     client.responses = [
-        [],
-        [make_message("reply", "assistant", "The answer", 11)],
+        [make_message("sent", "user", "Question", 10)],
+        [read_message],
+        [make_message("reply", "assistant", "The answer", 11, cycle=8)],
     ]
     tools = AltheaTools(client, make_config())
 
@@ -84,7 +87,7 @@ async def test_ask_althea_waits_for_first_assistant_reply() -> None:
     assert result == "The answer"
     assert client.sent == [("codex", "Question")]
     assert client.get_calls[-1]["sender"] == "assistant"
-    assert client.get_calls[-1]["cycle"] == 7
+    assert client.get_calls[-1]["cycle"] == 8
     assert client.get_calls[-1]["created_after"] == 10
 
 
