@@ -3,7 +3,7 @@
   "name": "io.github.tiptreesystems/althea-mcp",
   "title": "Althea MCP",
   "description": "Connect coding agents to your Althea and, through her, a consent-first network of ML researchers.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "websiteUrl": "https://github.com/tiptreesystems/althea-mcp",
   "repository": {
     "url": "https://github.com/tiptreesystems/althea-mcp",
@@ -14,7 +14,7 @@
     {
       "registryType": "pypi",
       "identifier": "althea-mcp",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       }

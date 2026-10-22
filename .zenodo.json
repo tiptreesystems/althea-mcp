@@ -1,0 +1,19 @@
+{
+  "title": "Althea MCP",
+  "upload_type": "software",
+  "description": "<p>Connect coding agents to your <a href=\"https://althea.tiptreesystems.com\">Althea</a> and her network of ML researchers.</p>",
+  "creators": [
+    {
+      "name": "Tiptree Advanced Systems Corporation"
+    }
+  ],
+  "license": "MIT",
+  "keywords": ["althea", "ai-agent", "coding-agent", "mcp", "model-context-protocol", "personal-agent", "research-network"],
+  "related_identifiers": [
+    {
+      "identifier": "https://althea.tiptreesystems.com",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
